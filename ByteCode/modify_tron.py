@@ -241,19 +241,31 @@ while pc < len(list_nums):
 		print('!!!!!!!!!!!!!!!!!!', hex(c))
 		pc += 1
 		continue'''
-	new_bytecode += '{:0>2x}'.format(c)
+	c_next = list_nums[pc+1]
+	if c_next == 0xd0:
+		new_bytecode += 'f15b'
+		continue
+	elif c == 0xd1:
+		new_bytecode += ''
+	elif c == 0xd2 or c == 0xd3:
+		new_bytecode += ''
+	elif c == 0xfe:
+		new_bytecode += ''
+	else:
+		new_bytecode += '{:0>2x}'.format(c)
+	#new_bytecode += '{:0>2x}'.format(c)
 	stack_start = len(stack)
-	if DEBUG:
+	if DEBUG and pc < 0x200:
 		if c in opcodes:
 			print("\033[1;30m"+("%04x:" % pc)+"    ", opcodes[c][0]+"\033[0m")
 		else:
 			print("\033[1;30m"+("%04x:" % pc)+"    \033[1;31mBAD OPCODE "+hex(c)+"\033[0m")
 	if c == 0x00:  # STOP
-		#print("exit()")
-		pseudoCode += 'exit()'
+		print("exit()")
+		#pseudoCode += 'exit()'
 	elif c == 0x01:  # ADD
-		pse_add_action(stack, pseudoCode, TwoOp.create(stack.pop(), "+", stack.pop()))
-		#stack.append(TwoOp.create(stack.pop(), "+", stack.pop()))
+		stack.append(TwoOp.create(stack.pop(), "+", stack.pop()))
+		#pse_add_action(stack, pseudoCode, TwoOp.create(stack.pop(), "+", stack.pop()))
 	elif c == 0x02:  # MUL
 		p1 = stack.pop()
 		p2 = stack.pop()
@@ -262,12 +274,11 @@ while pc < len(list_nums):
 		elif isinstance(p2, Constant) and p2.value == 1:
 			stack.append(p1)
 		else:
-			mul = TwoOp.create(p1, "*", p2)
-			pseudoCode += mul
-			pseudoCode += '\n'
-			stack.append(mul)
+			stack.append(TwoOp.create(p1, "*", p2))
+			#pse_add_action(stack, pseudoCode, TwoOp.create(p1, "*", p2))
 	elif c == 0x03:  # SUB
 		stack.append(TwoOp.create(stack.pop(), "-", stack.pop()))
+		#pse_add_action(stack, pseudoCode, TwoOp.create(stack.pop(), "-", stack.pop()))
 	elif c == 0x04:  # DIV
 		p1 = stack.pop()
 		p2 = stack.pop()
@@ -277,6 +288,7 @@ while pc < len(list_nums):
 			stack.append(p1)
 		else:
 			stack.append(TwoOp.create(p1, "/", p2))
+			#pse_add_action(stack, pseudoCode, TwoOp.create(p1, "/", p2))
 	elif c == 0x05:  # SDIV
 		p1 = stack.pop()
 		p2 = stack.pop()
@@ -286,6 +298,7 @@ while pc < len(list_nums):
 			stack.append(p1)
 		else:
 			stack.append(TwoOp.create(p1, "signed/", p2))
+			#pse_add_action(stack, pseudoCode, TwoOp.create(p1, "signed/", p2))
 	elif c == 0x06:  # MOD
 		p1 = stack.pop()
 		p2 = stack.pop()
@@ -293,6 +306,7 @@ while pc < len(list_nums):
 			stack.append(Constant(0))
 		else:
 			stack.append(TwoOp.create(p1, "%", p2))
+			#pse_add_action(stack, pseudoCode, TwoOp.create(p1, "%", p2))
 	elif c == 0x07:  # SMOD
 		p1 = stack.pop()
 		p2 = stack.pop()
@@ -300,6 +314,7 @@ while pc < len(list_nums):
 			stack.append(Constant(0))
 		else:
 			stack.append(TwoOp.create(p1, "signed%", p2))
+			#pse_add_action(stack, pseudoCode, TwoOp.create(p1, "signed%", p2))
 	elif c == 0x08:  # ADDMOD
 		stack.append(TwoOp.create(TwoOp.create(stack.pop(), "+", stack.pop()), "%", stack.pop()))
 	elif c == 0x09:  # MULMOD
@@ -466,8 +481,8 @@ while pc < len(list_nums):
 		n = c - 0xa0
 		print("TODO: LOG "+(", ".join(map(str, [stack.pop() for _ in range(n+2)]))))
 	elif c == 0xd0:
-		stack.append(FuncCall("call_token", list(map(str, [stack.pop() for _ in range(8)]))))
 		#print("TODO: CALLTOKEN " + (", ".join(map(str, [stack.pop() for _ in range(8)]))))
+		stack.append(FuncCall("call_token", list(map(str, [stack.pop() for _ in range(8)]))))
 	elif c == 0xd1:
 		stack.append(FuncCall("token_balance", [stack.pop(), stack.pop()]))
 	elif c == 0xd2:
@@ -570,7 +585,7 @@ while pc < len(list_nums):
 	pc += 1
 
 #print(stack)
-#print(new_bytecode)
+print(pseudoCode)
 with open('new_byte', 'w') as fp:
 	fp.write(new_bytecode)
 	fp.write('\n')
