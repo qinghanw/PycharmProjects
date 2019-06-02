@@ -2,7 +2,7 @@ import sys
 
 assert sys.version_info[0] == 3
 
-DEBUG = False
+DEBUG = True
 
 # schema: [opcode, ins, outs, gas]
 opcodes = {
@@ -233,7 +233,8 @@ for i in range(len_s):
 	list_nums.append(num)
 
 #print(list_nums)
-while pc < len(list_nums):
+total_line = len(list_nums)
+while pc < total_line:
 	c = list_nums[pc]
 	'''if c in opcodes.keys():
 		print(hex(c), '------', opcodes[c][0])
@@ -241,21 +242,25 @@ while pc < len(list_nums):
 		print('!!!!!!!!!!!!!!!!!!', hex(c))
 		pc += 1
 		continue'''
-	c_next = list_nums[pc+1]
-	if c_next == 0xd0:
-		new_bytecode += 'f15b'
-		continue
+	if pc != total_line-1:
+		c_next = list_nums[pc+1]
+		if c_next == 0xd0:
+			new_bytecode += 'f1'
+			pc += 1
+			continue
+	if c == 0xd0:
+		new_bytecode += '5b'
 	elif c == 0xd1:
-		new_bytecode += ''
+		new_bytecode += '20'
 	elif c == 0xd2 or c == 0xd3:
-		new_bytecode += ''
+		new_bytecode += '41'
 	elif c == 0xfe:
-		new_bytecode += ''
+		new_bytecode += '5b'
 	else:
 		new_bytecode += '{:0>2x}'.format(c)
 	#new_bytecode += '{:0>2x}'.format(c)
 	stack_start = len(stack)
-	if DEBUG and pc < 0x200:
+	if DEBUG: #and pc < 0x200:
 		if c in opcodes:
 			print("\033[1;30m"+("%04x:" % pc)+"    ", opcodes[c][0]+"\033[0m")
 		else:
@@ -468,6 +473,7 @@ while pc < len(list_nums):
 		n = c - 0x60 + 1
 		data = [0] * (32 - n) + list_nums[pc+1:pc+1+n]
 		data = sum([c << 8*i for i,c in enumerate(reversed(data))])
+		print('=========={0:0>{1}x}'.format(data, n*2))
 		pc += n
 		new_bytecode += '{0:0>{1}x}'.format(data, n*2)
 		stack.append(Constant(data))
